@@ -955,6 +955,16 @@ class AccountInternal extends PureComponent<
     );
   };
 
+  // Persiste la largeur d'une colonne apres un glissement. La configuration
+  // n'est enregistree que pour la vue courante : une largeur depend de ce
+  // qu'on regarde, contrairement au choix des colonnes affichees.
+  onResizeColumn = (id: TransactionTableColumnId, width: number) => {
+    const columns = this.props.transactionColumns.map(column =>
+      column.id === id ? { ...column, width } : column,
+    );
+    this.props.saveColumns(columns, false);
+  };
+
   onSaveColumns = (columns: TransactionTableColumn[], applyToAll: boolean) => {
     // Columns that aren't managed in the current view (e.g. the account
     // column on a single-account page) keep their previous position and
@@ -1921,6 +1931,8 @@ class AccountInternal extends PureComponent<
                   showGroup={this.props.showGroup}
                   showAccount={this.showAccountColumn()}
                   columnOrder={this.props.columnOrder}
+                  transactionColumns={this.props.transactionColumns}
+                  onResizeColumn={this.onResizeColumn}
                   allowReorder={
                     !!accountId &&
                     accountId !== 'offbudget' &&

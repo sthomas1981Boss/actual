@@ -20,7 +20,53 @@ export type TransactionTableColumnId =
 export type TransactionTableColumn = {
   id: TransactionTableColumnId;
   hidden: boolean;
+  // Width in pixels once the user has dragged the column's edge. Absent means
+  // "use the default below", which is what every column starts with.
+  width?: number;
 };
+
+// Bounds for user-resized columns: narrow enough to be useful, wide enough to
+// keep a header label readable and to avoid a column swallowing the table.
+export const MIN_COLUMN_WIDTH = 40;
+export const MAX_COLUMN_WIDTH = 800;
+
+// Single source of truth for column widths: the header cell, the body cell and
+// the dedicated cell components (payee, notes) all read from here, so a column
+// can never end up wider in the header than in the rows.
+//
+// `flex-N` takes N shares of the free space (see `flexWidthStyle` in
+// components/table.tsx). Notes carries the raw bank labels and so gets the
+// largest share. The amount columns are deliberately absent: they size
+// themselves from their content through `useAmountColumnWidths`.
+export const TRANSACTION_TABLE_COLUMN_WIDTHS = {
+  date: 110,
+  account: 'flex',
+  payee: 'flex-2',
+  notes: 'flex-3',
+  group: 'flex',
+  category: 'flex-2',
+  cleared: 38,
+} as const satisfies Partial<Record<TransactionTableColumnId, string | number>>;
+
+/**
+ * Effective width of a column: the width the user dragged it to, or its
+ * default. Returns undefined for the amount columns, which size themselves
+ * from their content unless explicitly resized.
+ */
+export function getTransactionTableColumnWidth(
+  id: TransactionTableColumnId,
+  columns: TransactionTableColumn[],
+): string | number | undefined {
+  const resized = columns.find(column => column.id === id)?.width;
+  return (
+    resized ??
+    (
+      TRANSACTION_TABLE_COLUMN_WIDTHS as Partial<
+        Record<TransactionTableColumnId, string | number>
+      >
+    )[id]
+  );
+}
 
 // The date column can be reordered but never hidden: it drives keyboard
 // navigation (new transactions start editing on the date field) so it must
@@ -116,7 +162,18 @@ export function parseTransactionTableColumns(
               'hidden' in entry &&
               entry.hidden === true &&
               !isTransactionTableColumnLocked(entry.id);
-            saved.push({ id: entry.id, hidden });
+            // A width out of bounds (hand-edited pref, older format, NaN) is
+            // dropped rather than clamped: falling back to the default is
+            // safer than honouring a value we don't trust.
+            const width =
+              'width' in entry &&
+              typeof entry.width === 'number' &&
+              Number.isFinite(entry.width) &&
+              entry.width >= MIN_COLUMN_WIDTH &&
+              entry.width <= MAX_COLUMN_WIDTH
+                ? entry.width
+                : undefined;
+            saved.push({ id: entry.id, hidden, ...(width ? { width } : {}) });
           }
         }
       }

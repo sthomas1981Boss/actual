@@ -72,6 +72,20 @@ function fireBlur(onBlur, e) {
   }
 }
 
+// Table columns size themselves with a house convention rather than a raw CSS
+// width: `flex` shares the free space evenly, and `flex-N` takes N shares of
+// it. `flex` stays equivalent to `flex-1`, so existing call sites are
+// unaffected. Used by both `Field` and `Cell` so a column's header and its body
+// cells always resolve to the same width.
+const FLEX_WIDTH = /^flex(?:-(\d+))?$/;
+
+export function flexWidthStyle(width: CSSProperties['width']): CSSProperties {
+  const match = typeof width === 'string' ? FLEX_WIDTH.exec(width) : null;
+  return match
+    ? { flex: match[1] ? Number(match[1]) : 1, flexBasis: 0 }
+    : { width };
+}
+
 type FieldProps = ComponentProps<typeof View> & {
   width?: CSSProperties['width'];
   name?: string;
@@ -87,7 +101,7 @@ export const Field = forwardRef<HTMLDivElement, FieldProps>(function Field(
       innerRef={ref}
       {...props}
       style={{
-        ...(width === 'flex' ? { flex: 1, flexBasis: 0 } : { width }),
+        ...flexWidthStyle(width),
         borderTopWidth: 1,
         borderBottomWidth: 1,
         borderColor: theme.tableBorder,
@@ -187,8 +201,7 @@ export function Cell({
 
   useProperFocus(viewRef, focused !== undefined ? focused : exposed);
 
-  const widthStyle: CSSProperties =
-    width === 'flex' ? { flex: 1, flexBasis: 0 } : { width };
+  const widthStyle: CSSProperties = flexWidthStyle(width);
   const cellStyle: CSSProperties = {
     position: 'relative',
     textAlign: textAlign || 'left',

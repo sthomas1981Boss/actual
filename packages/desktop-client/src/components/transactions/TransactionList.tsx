@@ -114,6 +114,8 @@ type TransactionListProps = Pick<
   | 'showReconciled'
   | 'showSelection'
   | 'columnOrder'
+  | 'transactionColumns'
+  | 'onResizeColumn'
   | 'sortField'
   | 'transactions'
 > & {
@@ -150,6 +152,8 @@ export function TransactionList({
   showGroup,
   showAccount,
   columnOrder,
+  transactionColumns,
+  onResizeColumn,
   isAdding,
   isNew,
   isMatched,
@@ -528,6 +532,8 @@ export function TransactionList({
         showCategory
         showGroup={showGroup}
         columnOrder={columnOrder}
+        transactionColumns={transactionColumns}
+        onResizeColumn={onResizeColumn}
         currentAccountId={account && account.id}
         currentCategoryId={category && category.id}
         isAdding={isAdding}
