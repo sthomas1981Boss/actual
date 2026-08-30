@@ -83,7 +83,11 @@ export function flexWidthStyle(width: CSSProperties['width']): CSSProperties {
   const match = typeof width === 'string' ? FLEX_WIDTH.exec(width) : null;
   return match
     ? { flex: match[1] ? Number(match[1]) : 1, flexBasis: 0 }
-    : { width };
+    : // `flexShrink: 0` matters once several columns carry an explicit width:
+      // their total can exceed the table, and the default `flex-shrink: 1`
+      // would silently squeeze every one of them — a column the user has just
+      // resized would drift back on the next render.
+      { width, flexShrink: 0 };
 }
 
 type FieldProps = ComponentProps<typeof View> & {
