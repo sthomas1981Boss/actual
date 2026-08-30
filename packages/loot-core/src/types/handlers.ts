@@ -17,6 +17,7 @@ import type { RulesHandlers } from '#server/rules/app';
 import type { SchedulesHandlers } from '#server/schedules/app';
 import type { SpreadsheetHandlers } from '#server/spreadsheet/app';
 import type { SyncHandlers } from '#server/sync/app';
+import type { ReservesHandlers } from '#server/reserves/app';
 import type { TagsHandlers } from '#server/tags/app';
 import type { ToolsHandlers } from '#server/tools/app';
 import type { TransactionHandlers } from '#server/transactions/app';
@@ -46,6 +47,7 @@ export type Handlers = {} & ServerHandlers &
   SyncHandlers &
   BudgetFileHandlers &
   EncryptionHandlers &
+  ReservesHandlers &
   TagsHandlers &
   AuthHandlers;
 

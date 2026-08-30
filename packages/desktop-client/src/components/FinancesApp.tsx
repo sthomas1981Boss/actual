@@ -38,6 +38,7 @@ import { NarrowAlternate, WideComponent } from './responsive';
 import { useMultiuserEnabled } from './ServerContext';
 import { Settings } from './settings';
 import { FloatableSidebar } from './sidebar';
+import { ReservesPage } from './reserves/ReservesPage';
 import { ManageTagsPage } from './tags/ManageTagsPage';
 import { Titlebar } from './Titlebar';
 import { Tour } from './tour/Tour';
@@ -362,6 +363,7 @@ export function FinancesApp() {
                         </ErrorBoundary>
                       }
                     />
+                    <Route path="/reserves" element={<ReservesPage />} />
                     <Route path="/tags" element={<ManageTagsPage />} />
                     <Route path="/settings" element={<Settings />} />
 

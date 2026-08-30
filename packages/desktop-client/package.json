@@ -114,6 +114,7 @@
     "#redux/*": "./src/redux/*.ts",
     "#reports/*": "./src/reports/*.ts",
     "#spreadsheet/*": "./src/spreadsheet/*.ts",
+    "#reserves/*": "./src/reserves/*.ts",
     "#tags/*": "./src/tags/*.ts",
     "#transactions/*": "./src/transactions/*.ts",
     "#undo/*": "./src/undo/*.ts",

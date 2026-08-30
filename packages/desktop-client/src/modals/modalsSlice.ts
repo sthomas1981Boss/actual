@@ -582,6 +582,10 @@ export type Modal =
       };
     }
   | {
+      name: 'reserve-accounts';
+      options: Record<string, never>;
+    }
+  | {
       name: 'transaction-table-columns';
       options: {
         columns: TransactionTableColumn[];

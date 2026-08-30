@@ -79,6 +79,7 @@ import { TrackingBalanceMenuModal } from './modals/TrackingBalanceMenuModal';
 import { TrackingBudgetMenuModal } from './modals/TrackingBudgetMenuModal';
 import { TrackingBudgetMonthMenuModal } from './modals/TrackingBudgetMonthMenuModal';
 import { TrackingBudgetSummaryModal } from './modals/TrackingBudgetSummaryModal';
+import { ReserveAccountsModal } from './modals/ReserveAccountsModal';
 import { TransactionTableColumnsModal } from './modals/TransactionTableColumnsModal';
 import { TransferModal } from './modals/TransferModal';
 import { TransferOwnership } from './modals/TransferOwnership';
@@ -154,6 +155,9 @@ export function Modals() {
 
         case 'confirm-transaction-edit':
           return <ConfirmTransactionEditModal key={key} {...modal.options} />;
+
+        case 'reserve-accounts':
+          return <ReserveAccountsModal key={key} />;
 
         case 'transaction-table-columns':
           return <TransactionTableColumnsModal key={key} {...modal.options} />;

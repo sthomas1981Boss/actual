@@ -21,6 +21,7 @@ exports[`Accounts > Transfers are properly updated 1`] = `
     "pending": 0,
     "raw_synced_data": null,
     "reconciled": 0,
+    "reserve_id": null,
     "schedule": null,
     "sort_order": 123456789,
     "starting_balance_flag": 0,
@@ -47,6 +48,7 @@ exports[`Accounts > Transfers are properly updated 1`] = `
     "pending": 0,
     "raw_synced_data": null,
     "reconciled": 0,
+    "reserve_id": null,
     "schedule": null,
     "sort_order": 123456789,
     "starting_balance_flag": 0,
@@ -76,7 +78,7 @@ exports[`Accounts > Transfers are properly updated 2`] = `
       "id": "test-transfer",
       "imported_description": null,
       "isChild": 0,
-@@ -24,11 +24,11 @@
+@@ -25,11 +25,11 @@
       "tombstone": 0,
       "transferred_id": "id2",
       "type": null,
@@ -95,9 +97,9 @@ exports[`Accounts > Transfers are properly updated 3`] = `
 "- First value
 + Second value
 
-@@ -19,12 +19,12 @@
-      "raw_synced_data": null,
+@@ -20,12 +20,12 @@
       "reconciled": 0,
+      "reserve_id": null,
       "schedule": null,
       "sort_order": 123456789,
       "starting_balance_flag": 0,
@@ -110,9 +112,9 @@ exports[`Accounts > Transfers are properly updated 3`] = `
     Object {
       "acct": "three",
       "amount": -5000,
-@@ -45,10 +45,10 @@
-      "raw_synced_data": null,
+@@ -47,10 +47,10 @@
       "reconciled": 0,
+      "reserve_id": null,
       "schedule": null,
       "sort_order": 123456789,
       "starting_balance_flag": 0,
