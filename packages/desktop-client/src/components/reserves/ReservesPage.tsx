@@ -17,6 +17,7 @@ import {
 import { pushModal } from '#modals/modalsSlice';
 import { useDispatch } from '#redux';
 
+import { ReserveHistory } from './ReserveHistory';
 import { ReserveRow } from './ReserveRow';
 import { ReservesEmptyState } from './ReservesEmptyState';
 
@@ -87,6 +88,8 @@ export function ReservesPage() {
           )}
         </View>
       )}
+
+      {accountIds.length > 0 && reserveRows.length > 0 && <ReserveHistory />}
 
       {orphanedAmount !== 0 && (
         <Text

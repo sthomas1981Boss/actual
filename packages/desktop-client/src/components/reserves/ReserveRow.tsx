@@ -12,10 +12,12 @@ type ReserveRowProps = {
 };
 
 export function ReserveRow({ row, isUnallocated = false }: ReserveRowProps) {
-  const percent = Math.round(row.share * 100);
   // A reserve can go negative if it was drawn on more than it was funded.
-  // Showing that plainly is the point — it means the provision is overdrawn.
+  // Showing that plainly is the point — it means the provision is overdrawn —
+  // but a share of the envelope is meaningless then, so bar and percentage are
+  // dropped rather than showing something like "-168%".
   const isNegative = row.amount < 0;
+  const percent = isNegative ? null : Math.round(row.share * 100);
 
   return (
     <View
@@ -47,15 +49,17 @@ export function ReserveRow({ row, isUnallocated = false }: ReserveRowProps) {
           marginRight: 15,
         }}
       >
-        <View
-          style={{
-            width: `${Math.max(0, Math.min(100, percent))}%`,
-            height: '100%',
-            backgroundColor: isUnallocated
-              ? theme.pageTextSubdued
-              : theme.reportsBlue,
-          }}
-        />
+        {percent !== null && (
+          <View
+            style={{
+              width: `${Math.max(0, Math.min(100, percent))}%`,
+              height: '100%',
+              backgroundColor: isUnallocated
+                ? theme.pageTextSubdued
+                : theme.reportsBlue,
+            }}
+          />
+        )}
       </View>
 
       <Text
@@ -76,7 +80,7 @@ export function ReserveRow({ row, isUnallocated = false }: ReserveRowProps) {
           color: theme.pageTextSubdued,
         }}
       >
-        {percent}%
+        {percent === null ? '' : `${percent}%`}
       </Text>
     </View>
   );
