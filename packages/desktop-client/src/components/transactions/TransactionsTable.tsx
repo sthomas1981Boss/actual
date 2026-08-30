@@ -79,12 +79,14 @@ import type {
   ScheduleEntity,
   TransactionEntity,
 } from '@actual-app/core/types/models';
+import { useQuery as useReactQuery } from '@tanstack/react-query';
 import { format as formatDate, parseISO } from 'date-fns';
 
 import { getAccountsById } from '#accounts/accountsSlice';
 import { AccountAutocomplete } from '#components/autocomplete/AccountAutocomplete';
 import { CategoryAutocomplete } from '#components/autocomplete/CategoryAutocomplete';
 import { PayeeAutocomplete } from '#components/autocomplete/PayeeAutocomplete';
+import { ReserveAutocomplete } from '#components/autocomplete/ReserveAutocomplete';
 import { TagAutocomplete } from '#components/autocomplete/TagAutocomplete';
 import { TransferDirectionIcon } from '#components/common/TransferDirectionIcon';
 import { getStatusProps } from '#components/schedules/StatusBadge';
@@ -141,6 +143,7 @@ import { addNotification } from '#notifications/notificationsSlice';
 import { getPayeesById } from '#payees';
 import { aqlQuery } from '#queries/aqlQuery';
 import { useDispatch } from '#redux';
+import { reserveQueries } from '#reserves/queries';
 import { getStatusLabel } from '#util/schedule';
 import {
   calculateFutureTransactionInfo,
@@ -316,6 +319,14 @@ const TransactionHeader = memo(
       category: {
         value: columnLabels.category,
         width: widthOf('category'),
+        resizable: true,
+        alignItems: 'flex',
+        marginLeft: -5,
+        sortDirection: 'asc',
+      },
+      reserve: {
+        value: columnLabels.reserve,
+        width: widthOf('reserve'),
         resizable: true,
         alignItems: 'flex',
         marginLeft: -5,
@@ -1143,6 +1154,12 @@ const Transaction = memo(function Transaction({
   amountColumnWidths,
 }: TransactionProps) {
   const widthOf = useColumnWidths();
+  // React Query dedupes across rows, so this costs one fetch, not one per row.
+  const { data: reserves = [] } = useReactQuery(reserveQueries.list());
+  const reservesById = useMemo(
+    () => Object.fromEntries(reserves.map(r => [r.id, r])),
+    [reserves],
+  );
   const { t } = useTranslation();
 
   const dispatch = useDispatch();
@@ -2003,6 +2020,35 @@ const Transaction = memo(function Transaction({
                   showHiddenCategories={showHiddenCategories}
                 />
               </SheetNameProvider>
+            )}
+          </CustomCell>
+        );
+      case 'reserve':
+        return (
+          <CustomCell
+            key={columnId}
+            /* Reserve field: which provision this transfer feeds or draws on */
+            name="reserve"
+            width={widthOf('reserve')}
+            textAlign="flex"
+            value={transaction.reserve ?? undefined}
+            formatter={value =>
+              value ? (reservesById[value]?.name ?? '') : ''
+            }
+            exposed={focusedField === 'reserve'}
+            onExpose={name => !isPreview && onEdit(id, name)}
+            valueStyle={valueStyle}
+            onUpdate={value => onUpdate('reserve', value)}
+          >
+            {({ onBlur, onKeyDown, onUpdate, onSave, inputStyle }) => (
+              <ReserveAutocomplete
+                value={transaction.reserve ?? null}
+                focused
+                clearOnBlur={false}
+                inputProps={{ onBlur, onKeyDown, style: inputStyle }}
+                onUpdate={onUpdate}
+                onSelect={onSave}
+              />
             )}
           </CustomCell>
         );
@@ -3048,6 +3094,8 @@ export type TransactionTableProps = {
   showAccount: boolean;
   showCategory: boolean;
   showGroup?: boolean;
+  /** Whether this account is split into reserves (see the reserves screen). */
+  showReserve?: boolean;
   // The full set of columns the user wants visible, in display order. When
   // provided, columns are rendered in this order; the show* flags above
   // still control the availability of the account/category/group/balance/
@@ -3130,6 +3178,7 @@ export const TransactionTable = forwardRef(
       showAccount,
       showCategory,
       showGroup,
+      showReserve,
       showBalances,
       showCleared,
     } = props;
@@ -3143,6 +3192,8 @@ export const TransactionTable = forwardRef(
               return showCategory;
             case 'group':
               return !!showGroup;
+            case 'reserve':
+              return !!showReserve;
             case 'balance':
               return showBalances;
             case 'cleared':
@@ -3156,6 +3207,7 @@ export const TransactionTable = forwardRef(
         showAccount,
         showCategory,
         showGroup,
+        showReserve,
         showBalances,
         showCleared,
       ],

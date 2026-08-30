@@ -31,7 +31,9 @@ export function useReserveAccountIds(): [string[], (ids: string[]) => void] {
     if (!raw) return [];
     try {
       const parsed: unknown = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed.filter(v => typeof v === 'string') : [];
+      return Array.isArray(parsed)
+        ? parsed.filter(v => typeof v === 'string')
+        : [];
     } catch {
       return [];
     }
@@ -68,22 +70,21 @@ export function useReserveBreakdown(asOf?: string): ReserveBreakdown {
               { reserve: { $id: '$reserve.id' } },
               { amount: { $sum: '$amount' } },
             ]),
-    [accountIds.join(','), asOf],
+    [accountIds, asOf],
   );
 
   // Assignments made while an account was opted in, kept after it was removed.
-  // A `calculate` query yields its scalar wrapped in the result array, hence
-  // the unwrapping below rather than a plain cast.
-  const { data: orphaned } = useQuery<number>(
+  // AQL has no "not one of", so this is the total assigned across every
+  // account; the opted-in share is subtracted below.
+  const { data: assignedEverywhere } = useQuery<number>(
     () =>
       q('transactions')
         .filter({
           reserve: { $ne: null },
-          ...(accountIds.length ? { account: { $notoneof: accountIds } } : {}),
           ...(asOf ? { date: { $lte: asOf } } : {}),
         })
         .calculate({ $sum: '$amount' }),
-    [accountIds.join(','), asOf],
+    [asOf],
   );
 
   return useMemo(() => {
@@ -116,10 +117,13 @@ export function useReserveBreakdown(asOf?: string): ReserveBreakdown {
     return {
       envelope,
       rows,
-      orphanedAmount: Array.isArray(orphaned) ? (orphaned[0] ?? 0) : 0,
+      // Everything assigned, minus what is assigned on opted-in accounts.
+      orphanedAmount:
+        (Array.isArray(assignedEverywhere) ? (assignedEverywhere[0] ?? 0) : 0) -
+        rows.reduce((t, r) => (r.id ? t + r.amount : t), 0),
       isLoading: loadingSums,
     };
-  }, [byReserve, orphaned, reserves, loadingSums]);
+  }, [byReserve, assignedEverywhere, reserves, loadingSums]);
 }
 
 /** Accounts eligible to be opted in: off-budget and open. */

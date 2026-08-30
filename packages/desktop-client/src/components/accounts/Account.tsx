@@ -62,6 +62,7 @@ import { useCategories } from '#hooks/useCategories';
 import { useDateFormat } from '#hooks/useDateFormat';
 import { useLocalPref } from '#hooks/useLocalPref';
 import { usePayees } from '#hooks/usePayees';
+import { useReserveAccountIds } from '#hooks/useReserveBreakdown';
 import { getSchedulesQuery } from '#hooks/useSchedules';
 import { SelectedProviderWithItems } from '#hooks/useSelected';
 import type { Actions } from '#hooks/useSelected';
@@ -229,6 +230,7 @@ type AccountInternalProps = {
   showExtraBalances?: boolean;
   setShowExtraBalances: (newValue: boolean) => void;
   transactionColumns: TransactionTableColumn[];
+  reserveAccountIds: string[];
   columnOrder: TransactionTableColumnId[];
   saveColumns: (columns: TransactionTableColumn[], applyToAll: boolean) => void;
   modalShowing?: boolean;
@@ -1929,6 +1931,9 @@ class AccountInternal extends PureComponent<
                   showReconciled={showReconciled}
                   showCleared={!!showCleared}
                   showGroup={this.props.showGroup}
+                  showReserve={this.props.reserveAccountIds.includes(
+                    this.props.accountId ?? '',
+                  )}
                   showAccount={this.showAccountColumn()}
                   columnOrder={this.props.columnOrder}
                   transactionColumns={this.props.transactionColumns}
@@ -2071,6 +2076,7 @@ export function Account() {
     showGroup,
     saveColumns,
   } = useTransactionTableColumns(params.id);
+  const [reserveAccountIds] = useReserveAccountIds();
 
   const modalShowing = useSelector(state => state.modals.modalStack.length > 0);
   const accountsSyncing = useSelector(state => state.account.accountsSyncing);
@@ -2126,6 +2132,7 @@ export function Account() {
               setShowExtraBalances(String(extraBalances))
             }
             transactionColumns={transactionColumns}
+            reserveAccountIds={reserveAccountIds}
             columnOrder={columnOrder}
             saveColumns={saveColumns}
             payees={payees}

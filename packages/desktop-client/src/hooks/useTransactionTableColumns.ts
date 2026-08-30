@@ -53,9 +53,10 @@ export function useTransactionTableColumns(accountId: string | undefined) {
   const showGroup = columnsConfig
     ? !transactionColumns.find(column => column.id === 'group')?.hidden
     : String(legacyShowGroup) === 'true';
-  // The balance/cleared/group columns stay in the order even when hidden:
-  // their visibility is controlled by the show* flags, which can come from
-  // the legacy prefs or component-state overrides instead of the config.
+  // The balance/cleared/group/reserve columns stay in the order even when
+  // hidden: their visibility is controlled by the show* flags, which can come
+  // from the legacy prefs or component-state overrides instead of the config.
+  // For reserve, the flag is whether the account is split into reserves.
   const columnOrder = useMemo(
     () =>
       transactionColumns
@@ -64,6 +65,7 @@ export function useTransactionTableColumns(accountId: string | undefined) {
             column.id === 'balance' ||
             column.id === 'cleared' ||
             column.id === 'group' ||
+            column.id === 'reserve' ||
             !column.hidden,
         )
         .map(column => column.id),

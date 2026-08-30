@@ -28,8 +28,7 @@ export function useUpdateReserveMutation() {
   const invalidate = useInvalidate();
   return useMutation({
     mutationFn: (
-      reserve: Partial<SavingsReserveEntity> &
-        Pick<SavingsReserveEntity, 'id'>,
+      reserve: Partial<SavingsReserveEntity> & Pick<SavingsReserveEntity, 'id'>,
     ) => send('reserves-update', reserve),
     onSuccess: invalidate,
   });

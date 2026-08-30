@@ -111,6 +111,7 @@ type TransactionListProps = Pick<
   | 'showBalances'
   | 'showCleared'
   | 'showGroup'
+  | 'showReserve'
   | 'showReconciled'
   | 'showSelection'
   | 'columnOrder'
@@ -150,6 +151,7 @@ export function TransactionList({
   showReconciled,
   showCleared,
   showGroup,
+  showReserve,
   showAccount,
   columnOrder,
   transactionColumns,
@@ -531,6 +533,7 @@ export function TransactionList({
         showAccount={showAccount}
         showCategory
         showGroup={showGroup}
+        showReserve={showReserve}
         columnOrder={columnOrder}
         transactionColumns={transactionColumns}
         onResizeColumn={onResizeColumn}
