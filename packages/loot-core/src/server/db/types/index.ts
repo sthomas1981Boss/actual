@@ -364,6 +364,13 @@ export type DbViewSchedule = {
   _has_splits: 0 | 1;
 };
 
+export type DbSavingsReserve = {
+  id: string;
+  name: string;
+  sort_order: number;
+  tombstone: 1 | 0;
+};
+
 export type DbTag = {
   id: string;
   tag: string;

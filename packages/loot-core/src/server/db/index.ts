@@ -50,6 +50,7 @@ import type {
   DbClockMessage,
   DbPayee,
   DbPayeeMapping,
+  DbSavingsReserve,
   DbTag,
   DbTransaction,
   DbViewTransaction,
@@ -1078,6 +1079,36 @@ async function moveSubtransactions(
 
 function toSqlQueryParameters(params: unknown[]) {
   return params.map(() => '?').join(',');
+}
+
+export function getSavingsReserves() {
+  return all<DbSavingsReserve>(`
+    SELECT id, name, sort_order
+    FROM savings_reserves
+    WHERE tombstone = 0
+    ORDER BY sort_order, name
+  `);
+}
+
+export function insertSavingsReserve(
+  reserve: Omit<DbSavingsReserve, 'id' | 'tombstone'>,
+): Promise<DbSavingsReserve['id']> {
+  return insertWithUUID('savings_reserves', reserve);
+}
+
+export function updateSavingsReserve(
+  reserve: Partial<DbSavingsReserve> & Pick<DbSavingsReserve, 'id'>,
+) {
+  return update('savings_reserves', reserve);
+}
+
+// Clearing `reserve_id` matters: a tombstoned reserve still referenced by
+// transactions would leave them pointing at something the UI can't name.
+export async function deleteSavingsReserve(id: DbSavingsReserve['id']) {
+  await run('UPDATE transactions SET reserve_id = NULL WHERE reserve_id = ?', [
+    id,
+  ]);
+  return delete_('savings_reserves', id);
 }
 
 export function getTags() {
