@@ -5,6 +5,12 @@ import i18n from 'i18next';
 import resourcesToBackend from 'i18next-resources-to-backend';
 
 import { languages } from './languages';
+import { fr as forkFr } from './locale-fork/fr';
+
+// Les libelles propres a ce fork (les reserves) n'existent pas dans le depot de
+// traductions amont, et `locale/` en est un clone non versionne : les ajouter
+// la-bas serait perdu au premier `git pull`. On les superpose donc ici.
+const forkTranslations: Record<string, Record<string, string>> = { fr: forkFr };
 
 export const availableLanguages = Platform.isPlaywright
   ? []
@@ -13,11 +19,18 @@ export const availableLanguages = Platform.isPlaywright
 const isLanguageAvailable = (language: string) =>
   Object.hasOwn(languages, `/locale/${language}.json`);
 
-const loadLanguage = (language: string) => {
+const loadLanguage = async (language: string) => {
   if (!isLanguageAvailable(language)) {
     throw new Error(`Unknown locale ${language}`);
   }
-  return languages[`/locale/${language}.json`]();
+  // Le glob Vite renvoie un module ; selon la cible, les libelles sont sur
+  // `default` ou directement sur l'objet.
+  const loaded = (await languages[`/locale/${language}.json`]()) as {
+    default?: Record<string, string>;
+  };
+  const base = (loaded.default ?? loaded) as Record<string, string>;
+  const fork = forkTranslations[language];
+  return fork ? { ...base, ...fork } : base;
 };
 
 void i18n
