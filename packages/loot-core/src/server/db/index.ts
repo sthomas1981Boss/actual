@@ -51,6 +51,7 @@ import type {
   DbPayee,
   DbPayeeMapping,
   DbSavingsReserve,
+  DbSavingsReserveEntry,
   DbTag,
   DbTransaction,
   DbViewTransaction,
@@ -1083,7 +1084,7 @@ function toSqlQueryParameters(params: unknown[]) {
 
 export function getSavingsReserves() {
   return all<DbSavingsReserve>(`
-    SELECT id, name, sort_order
+    SELECT id, name, sort_order, monthly_amount
     FROM savings_reserves
     WHERE tombstone = 0
     ORDER BY sort_order, name
@@ -1102,13 +1103,59 @@ export function updateSavingsReserve(
   return update('savings_reserves', reserve);
 }
 
-// Clearing `reserve_id` matters: a tombstoned reserve still referenced by
-// transactions would leave them pointing at something the UI can't name.
+// The entries go with the reserve: left behind, they would keep weighing on
+// the totals with no row to explain them.
 export async function deleteSavingsReserve(id: DbSavingsReserve['id']) {
-  await run('UPDATE transactions SET reserve_id = NULL WHERE reserve_id = ?', [
-    id,
-  ]);
+  await run(
+    'UPDATE savings_reserve_entries SET tombstone = 1 WHERE reserve_id = ?',
+    [id],
+  );
   return delete_('savings_reserves', id);
+}
+
+export function getSavingsReserveEntries() {
+  return all<DbSavingsReserveEntry>(`
+    SELECT id, reserve_id, month, amount
+    FROM savings_reserve_entries
+    WHERE tombstone = 0
+    ORDER BY month
+  `);
+}
+
+/**
+ * Sets what a reserve receives (or gives up) in one month, on top of its
+ * recurring funding. One row per reserve and month: setting it again replaces
+ * the amount rather than stacking a second row, so the table stays a direct
+ * reading of what the user typed. Zero deletes the row — an empty cell and a
+ * cell holding zero mean the same thing, and only one of them should exist.
+ */
+export async function setSavingsReserveEntry({
+  reserve_id,
+  month,
+  amount,
+}: Omit<DbSavingsReserveEntry, 'id' | 'tombstone'>) {
+  const existing = await first<DbSavingsReserveEntry>(
+    `SELECT id FROM savings_reserve_entries
+     WHERE reserve_id = ? AND month = ? AND tombstone = 0`,
+    [reserve_id, month],
+  );
+
+  if (amount === 0) {
+    if (existing) {
+      await delete_('savings_reserve_entries', existing.id);
+    }
+    return;
+  }
+
+  if (existing) {
+    await update('savings_reserve_entries', { id: existing.id, amount });
+    return;
+  }
+  await insertWithUUID('savings_reserve_entries', {
+    reserve_id,
+    month,
+    amount,
+  });
 }
 
 export function getTags() {

@@ -8,7 +8,6 @@ export const TRANSACTION_TABLE_COLUMN_IDS = [
   'notes',
   'group',
   'category',
-  'reserve',
   'payment',
   'deposit',
   'balance',
@@ -46,7 +45,6 @@ export const TRANSACTION_TABLE_COLUMN_WIDTHS = {
   notes: 'flex-3',
   group: 'flex',
   category: 'flex-2',
-  reserve: 'flex',
   cleared: 38,
 } as const satisfies Partial<Record<TransactionTableColumnId, string | number>>;
 
@@ -110,7 +108,6 @@ export function useTransactionTableColumnLabels(): Record<
     notes: t('Notes'),
     group: t('Category group'),
     category: t('Category'),
-    reserve: t('Reserve'),
     payment: t('Payment'),
     deposit: t('Deposit'),
     balance: t('Running balance'),
@@ -120,9 +117,8 @@ export function useTransactionTableColumnLabels(): Record<
 
 function isColumnHiddenByDefault(id: TransactionTableColumnId): boolean {
   // The running balance and category group columns are opt-in, matching the
-  // app's historical default of not showing them. The reserve column only
-  // applies to accounts split into reserves, so it stays off elsewhere.
-  return id === 'balance' || id === 'group' || id === 'reserve';
+  // app's historical default of not showing them.
+  return id === 'balance' || id === 'group';
 }
 
 export function getDefaultTransactionTableColumns(): TransactionTableColumn[] {

@@ -20,6 +20,8 @@ type SingleInputModalProps = {
   onSubmit: (value: string) => void;
   onValidate?: (value: string) => string | null;
   inputPlaceholder?: string;
+  /** Pre-filled value, so the same modal can rename as well as create. */
+  defaultValue?: string;
 };
 
 export function SingleInputModal({
@@ -29,8 +31,9 @@ export function SingleInputModal({
   onSubmit,
   onValidate,
   inputPlaceholder,
+  defaultValue = '',
 }: SingleInputModalProps) {
-  const [value, setValue] = useState('');
+  const [value, setValue] = useState(defaultValue);
   const [errorMessage, setErrorMessage] = useState(null);
 
   const _onSubmit = (e: FormEvent<HTMLFormElement>) => {

@@ -73,6 +73,7 @@ import { PasswordEnableModal } from './modals/PasswordEnableModal';
 import { PayeeAutocompleteModal } from './modals/PayeeAutocompleteModal';
 import { PluggyAiInitialiseModal } from './modals/PluggyAiInitialiseModal';
 import { ReserveAccountsModal } from './modals/ReserveAccountsModal';
+import { ReserveNameModal } from './modals/ReserveNameModal';
 import { ScheduledTransactionMenuModal } from './modals/ScheduledTransactionMenuModal';
 import { SelectLinkedAccountsModal } from './modals/SelectLinkedAccountsModal';
 import { SimpleFinInitialiseModal } from './modals/SimpleFinInitialiseModal';
@@ -158,6 +159,8 @@ export function Modals() {
 
         case 'reserve-accounts':
           return <ReserveAccountsModal key={key} />;
+        case 'reserve-name':
+          return <ReserveNameModal key={key} {...modal.options} />;
 
         case 'transaction-table-columns':
           return <TransactionTableColumnsModal key={key} {...modal.options} />;

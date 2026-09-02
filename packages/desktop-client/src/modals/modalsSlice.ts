@@ -586,6 +586,17 @@ export type Modal =
       options: Record<string, never>;
     }
   | {
+      name: 'reserve-name';
+      options: {
+        title: string;
+        buttonText: string;
+        placeholder: string;
+        defaultValue?: string;
+        onValidate?: (value: string) => string | null;
+        onSubmit: (value: string) => void;
+      };
+    }
+  | {
       name: 'transaction-table-columns';
       options: {
         columns: TransactionTableColumn[];

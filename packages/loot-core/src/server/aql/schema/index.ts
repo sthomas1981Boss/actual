@@ -53,7 +53,6 @@ export const schema = {
     reconciled: f('boolean', { default: false }),
     tombstone: f('boolean'),
     schedule: f('id', { ref: 'schedules' }),
-    reserve: f('id', { ref: 'savings_reserves' }),
     raw_synced_data: f('string'),
     // subtransactions is a special field added if the table has the
     // `splits: grouped` option
@@ -82,12 +81,6 @@ export const schema = {
     account_group_id: f('id', { ref: 'account_groups' }),
   },
   account_groups: {
-    id: f('id'),
-    name: f('string'),
-    sort_order: f('float'),
-    tombstone: f('boolean'),
-  },
-  savings_reserves: {
     id: f('id'),
     name: f('string'),
     sort_order: f('float'),
@@ -387,7 +380,6 @@ export const schemaConfig: SchemaConfig = {
         imported_payee: 'imported_description',
         transfer_id: 'transferred_id',
         payee: 'description',
-        reserve: 'reserve_id',
       },
 
       v_transactions_internal: internalFields => {

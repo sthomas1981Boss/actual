@@ -368,6 +368,17 @@ export type DbSavingsReserve = {
   id: string;
   name: string;
   sort_order: number;
+  /** Recurring monthly funding, in cents. */
+  monthly_amount: number;
+  tombstone: 1 | 0;
+};
+
+/** A one-off amount put into (or taken out of) a reserve for a given month. */
+export type DbSavingsReserveEntry = {
+  id: string;
+  reserve_id: string;
+  month: string;
+  amount: number;
   tombstone: 1 | 0;
 };
 

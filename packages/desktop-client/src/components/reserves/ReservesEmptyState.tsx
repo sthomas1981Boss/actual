@@ -47,8 +47,8 @@ export function ReservesEmptyState({
       ) : (
         <Text>
           <Trans>
-            No reserve yet. Create one, then assign transfers to it from the
-            account&apos;s transaction list.
+            No reserve yet. Create one, then type a figure into a month to start
+            its running total.
           </Trans>
         </Text>
       )}

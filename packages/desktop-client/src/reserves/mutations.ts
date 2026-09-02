@@ -4,14 +4,13 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { reserveQueries } from './queries';
 
-// Reserve edits also change what the transaction list shows, so both caches
-// are invalidated: a renamed or deleted reserve must not linger in the
-// Reserve column of an already-rendered row.
+// Both caches: an amount typed for one month changes the running balances of
+// every later month, and deleting a reserve drops its entries with it.
 function useInvalidate() {
   const queryClient = useQueryClient();
   return () => {
     void queryClient.invalidateQueries({ queryKey: reserveQueries.lists() });
-    void queryClient.invalidateQueries({ queryKey: ['transactions'] });
+    void queryClient.invalidateQueries({ queryKey: reserveQueries.entries() });
   };
 }
 
@@ -20,6 +19,32 @@ export function useCreateReserveMutation() {
   return useMutation({
     mutationFn: ({ name }: Pick<SavingsReserveEntity, 'name'>) =>
       send('reserves-create', { name }),
+    onSuccess: invalidate,
+  });
+}
+
+/**
+ * Changes the standing order without rewriting the past: the months already
+ * gone keep the old amount, the new one applies from `from_month`.
+ */
+export function useSetReserveMonthlyMutation() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: (params: { id: string; amount: number; from_month: string }) =>
+      send('reserve-monthly-set', params),
+    onSuccess: invalidate,
+  });
+}
+
+/** Sets what a reserve gets, or gives up, in one month. */
+export function useSetReserveEntryMutation() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: (entry: {
+      reserve_id: string;
+      month: string;
+      amount: number;
+    }) => send('reserve-entry-set', entry),
     onSuccess: invalidate,
   });
 }

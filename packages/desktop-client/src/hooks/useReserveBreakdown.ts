@@ -1,28 +1,13 @@
 import { useMemo } from 'react';
 
-import { q } from '@actual-app/core/shared/query';
-import type { AccountEntity } from '@actual-app/core/types/models';
-import { useQuery as useReactQuery } from '@tanstack/react-query';
+import * as monthUtils from '@actual-app/core/shared/months';
+import type {
+  AccountEntity,
+  SavingsReserveEntity,
+  SavingsReserveEntryEntity,
+} from '@actual-app/core/types/models';
 
-import { useQuery } from '#hooks/useQuery';
 import { useSyncedPref } from '#hooks/useSyncedPref';
-import { reserveQueries } from '#reserves/queries';
-
-export type ReserveBreakdownRow = {
-  id: string | null; // null = the unallocated remainder
-  name: string;
-  amount: number;
-  share: number; // 0..1 of the total envelope
-};
-
-export type ReserveBreakdown = {
-  /** Sum of the balances of the accounts opted into reserve tracking. */
-  envelope: number;
-  rows: ReserveBreakdownRow[];
-  /** Assignments whose account is no longer opted in — surfaced, not hidden. */
-  orphanedAmount: number;
-  isLoading: boolean;
-};
 
 /** Ids of the off-budget accounts the user opted into reserve tracking. */
 export function useReserveAccountIds(): [string[], (ids: string[]) => void] {
@@ -43,87 +28,67 @@ export function useReserveAccountIds(): [string[], (ids: string[]) => void] {
 }
 
 /**
- * Breakdown of the reserve accounts' balance across reserves.
- *
- * `asOf` bounds the computation to a date (inclusive), which is what makes the
- * monthly history possible: the same calculation, called once per month end.
- * Passing nothing means "as of today".
+ * The month a reserve came to life: the earliest one carrying a typed figure.
+ * Nothing accrues before it — a standing order with no origin would backfill
+ * the whole history and invent a past that never happened.
  */
-export function useReserveBreakdown(asOf?: string): ReserveBreakdown {
-  const [accountIds] = useReserveAccountIds();
-  const { data: reserves = [] } = useReactQuery(reserveQueries.list());
+export function firstFundedMonth(
+  reserveId: string,
+  entries: SavingsReserveEntryEntity[],
+): string | null {
+  let earliest: string | null = null;
+  for (const entry of entries) {
+    if (entry.reserve_id !== reserveId) continue;
+    if (earliest === null || entry.month < earliest) earliest = entry.month;
+  }
+  return earliest;
+}
 
-  const { data: byReserve, isLoading: loadingSums } = useQuery<{
-    reserve: string | null;
-    amount: number;
-  }>(
-    () =>
-      accountIds.length === 0
-        ? null
-        : q('transactions')
-            .filter({
-              account: { $oneof: accountIds },
-              ...(asOf ? { date: { $lte: asOf } } : {}),
-            })
-            .groupBy([{ $id: '$reserve' }])
-            .select([
-              { reserve: { $id: '$reserve.id' } },
-              { amount: { $sum: '$amount' } },
-            ]),
-    [accountIds, asOf],
+/**
+ * What a reserve receives, or gives up, during `month`.
+ *
+ * A month carries either what was typed into it, or the standing order — never
+ * both. Typing into a month replaces that month's payment, which is what makes
+ * the table predictable: the figure entered is the money moved, and nothing
+ * else is quietly recorded alongside it.
+ *
+ * Nothing happens before the first month typed into: a standing order with no
+ * origin would run back through the whole history and invent a past.
+ */
+export function reservePaymentIn(
+  reserve: Pick<SavingsReserveEntity, 'id' | 'monthly_amount'>,
+  entries: SavingsReserveEntryEntity[],
+  month: string,
+): number {
+  const start = firstFundedMonth(reserve.id, entries);
+  if (start === null || month < start) return 0;
+
+  const typed = entries.find(
+    e => e.reserve_id === reserve.id && e.month === month,
   );
+  return typed ? typed.amount : reserve.monthly_amount;
+}
 
-  // Assignments made while an account was opted in, kept after it was removed.
-  // AQL has no "not one of", so this is the total assigned across every
-  // account; the opted-in share is subtracted below.
-  const { data: assignedEverywhere } = useQuery<number>(
-    () =>
-      q('transactions')
-        .filter({
-          reserve: { $ne: null },
-          ...(asOf ? { date: { $lte: asOf } } : {}),
-        })
-        .calculate({ $sum: '$amount' }),
-    [asOf],
-  );
+/**
+ * What a reserve holds at the end of `month`: every monthly payment added up
+ * since it started.
+ *
+ * Nothing is stored: re-typing a figure on a past month corrects the running
+ * total from that month onwards, which is what you want from a balance.
+ */
+export function reserveBalanceAt(
+  reserve: Pick<SavingsReserveEntity, 'id' | 'monthly_amount'>,
+  entries: SavingsReserveEntryEntity[],
+  month: string,
+): number {
+  const start = firstFundedMonth(reserve.id, entries);
+  if (start === null || month < start) return 0;
 
-  return useMemo(() => {
-    const sums = new Map<string | null, number>();
-    for (const row of byReserve ?? []) {
-      sums.set(row.reserve, row.amount ?? 0);
-    }
-
-    const envelope = [...sums.values()].reduce((total, v) => total + v, 0);
-    const share = (amount: number) => (envelope === 0 ? 0 : amount / envelope);
-
-    const rows: ReserveBreakdownRow[] = reserves.map(reserve => ({
-      id: reserve.id,
-      name: reserve.name,
-      amount: sums.get(reserve.id) ?? 0,
-      share: share(sums.get(reserve.id) ?? 0),
-    }));
-
-    // Everything not tied to a reserve, including transactions predating the
-    // feature. Deliberately a row of its own: it is available savings, not an
-    // error to be hidden away.
-    const unallocated = sums.get(null) ?? 0;
-    rows.push({
-      id: null,
-      name: 'unallocated',
-      amount: unallocated,
-      share: share(unallocated),
-    });
-
-    return {
-      envelope,
-      rows,
-      // Everything assigned, minus what is assigned on opted-in accounts.
-      orphanedAmount:
-        (Array.isArray(assignedEverywhere) ? (assignedEverywhere[0] ?? 0) : 0) -
-        rows.reduce((t, r) => (r.id ? t + r.amount : t), 0),
-      isLoading: loadingSums,
-    };
-  }, [byReserve, assignedEverywhere, reserves, loadingSums]);
+  let total = 0;
+  for (let m = start; m <= month; m = monthUtils.addMonths(m, 1)) {
+    total += reservePaymentIn(reserve, entries, m);
+  }
+  return total;
 }
 
 /** Accounts eligible to be opted in: off-budget and open. */
