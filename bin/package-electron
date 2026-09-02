@@ -53,12 +53,19 @@ export NODE_OPTIONS="--max-old-space-size=4096"
 
 yarn workspace @actual-app/crdt build
 yarn workspace plugins-service build
-yarn workspace @actual-app/core build:node
 yarn workspace @actual-app/web build --mode=desktop # electron specific build
 
 # required for running the sync-server server
 yarn build:browser
 yarn workspace @actual-app/sync-server build
+
+# Le backend Electron s'ecrit en DERNIER, et c'est essentiel. `build:browser`
+# passe par lage, dont la tache `build` de loot-core met en cache tout
+# `lib-dist/**` — bundle.desktop.js compris, alors qu'il est produit par un
+# autre script. Construit avant, il se faisait ecraser par la version en cache :
+# l'app livree tournait sur un backend perime, sans les migrations ni le schema
+# recents, et les ecrans concernes plantaient.
+yarn workspace @actual-app/core build:node
 
 # Emit @actual-app/core declarations so desktop-electron (which includes typings/window.ts) can build
 yarn workspace @actual-app/core exec tsgo -p tsconfig.json
