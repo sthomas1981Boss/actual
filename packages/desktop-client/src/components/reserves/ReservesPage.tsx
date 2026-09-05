@@ -26,6 +26,7 @@ import { useDispatch } from '#redux';
 import {
   useCreateReserveMutation,
   useDeleteReserveMutation,
+  useMoveReserveMutation,
   useSetReserveEntryMutation,
   useSetReserveMonthlyMutation,
   useUpdateReserveMutation,
@@ -55,6 +56,7 @@ export function ReservesPage() {
   const { mutate: updateReserve } = useUpdateReserveMutation();
   const { mutate: deleteReserve } = useDeleteReserveMutation();
   const { mutate: setEntry } = useSetReserveEntryMutation();
+  const { mutate: moveReserve } = useMoveReserveMutation();
   const { mutate: setMonthlyAmount } = useSetReserveMonthlyMutation();
 
   const trackedAccounts = accounts.filter(a => accountIds.includes(a.id));
@@ -223,6 +225,7 @@ export function ReservesPage() {
           onSetPayment={setPayment}
           onRename={renameReserve}
           onDelete={removeReserve}
+          onMove={(id, direction) => moveReserve({ id, direction })}
         />
       )}
 

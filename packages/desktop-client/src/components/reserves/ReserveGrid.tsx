@@ -2,7 +2,11 @@ import { useRef, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
-import { SvgDotsHorizontalTriple } from '@actual-app/components/icons/v1';
+import {
+  SvgArrowThinDown,
+  SvgArrowThinUp,
+  SvgDotsHorizontalTriple,
+} from '@actual-app/components/icons/v1';
 import { Menu } from '@actual-app/components/menu';
 import { Popover } from '@actual-app/components/popover';
 import { styles } from '@actual-app/components/styles';
@@ -27,6 +31,7 @@ type ReserveGridProps = {
   onSetPayment: (id: string, month: string, amount: number) => void;
   onRename: (id: string, name: string) => void;
   onDelete: (id: string, name: string, amount: number) => void;
+  onMove: (id: string, direction: 'up' | 'down') => void;
 };
 
 const cell = (isProjected: boolean, value: number) => ({
@@ -48,10 +53,16 @@ const cell = (isProjected: boolean, value: number) => ({
 function RowMenu({
   onRename,
   onDelete,
+  onMove,
+  canMoveUp,
+  canMoveDown,
   label,
 }: {
   onRename: () => void;
   onDelete: () => void;
+  onMove: (direction: 'up' | 'down') => void;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
   label: string;
 }) {
   const { t } = useTranslation();
@@ -76,11 +87,28 @@ function RowMenu({
       >
         <Menu
           items={[
+            // Greyed out rather than hidden at the ends of the list: a menu
+            // whose entries come and go is harder to aim at than a steady one.
+            {
+              name: 'move-up',
+              text: t('Move up'),
+              icon: SvgArrowThinUp,
+              disabled: !canMoveUp,
+            },
+            {
+              name: 'move-down',
+              text: t('Move down'),
+              icon: SvgArrowThinDown,
+              disabled: !canMoveDown,
+            },
+            Menu.line,
             { name: 'rename', text: t('Rename') },
             { name: 'delete', text: t('Delete') },
           ]}
           onMenuSelect={name => {
             setOpen(false);
+            if (name === 'move-up') onMove('up');
+            if (name === 'move-down') onMove('down');
             if (name === 'rename') onRename();
             if (name === 'delete') onDelete();
           }}
@@ -105,6 +133,7 @@ export function ReserveGrid({
   onSetPayment,
   onRename,
   onDelete,
+  onMove,
 }: ReserveGridProps) {
   const { t } = useTranslation();
   const locale = useLocale();
@@ -189,7 +218,7 @@ export function ReserveGrid({
                 ))}
               </tr>
 
-              {rows.map(row => (
+              {rows.map((row, index) => (
                 <tr key={row.id}>
                   <td style={{ padding: '2px 8px', whiteSpace: 'nowrap' }}>
                     <View
@@ -203,6 +232,9 @@ export function ReserveGrid({
                       {row.name}
                       <RowMenu
                         label={row.name}
+                        canMoveUp={index > 0}
+                        canMoveDown={index < rows.length - 1}
+                        onMove={direction => onMove(row.id, direction)}
                         onRename={() => onRename(row.id, row.name)}
                         onDelete={() =>
                           onDelete(

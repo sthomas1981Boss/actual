@@ -7,6 +7,8 @@
 // controle la correspondance.
 export const fr: Record<string, string> = {
   Reserves: 'Réserves',
+  'Move down': 'Descendre',
+  'Move up': 'Monter',
   'Accounts balance': 'Solde des comptes',
   Reserve: 'Réserve',
   'Reserves by month': 'Réserves par mois',

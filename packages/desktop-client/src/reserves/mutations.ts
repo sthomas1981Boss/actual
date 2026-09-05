@@ -36,6 +36,16 @@ export function useSetReserveMonthlyMutation() {
   });
 }
 
+/** Moves a reserve one step up or down the table. */
+export function useMoveReserveMutation() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: (params: { id: string; direction: 'up' | 'down' }) =>
+      send('reserves-move', params),
+    onSuccess: invalidate,
+  });
+}
+
 /** Sets what a reserve gets, or gives up, in one month. */
 export function useSetReserveEntryMutation() {
   const invalidate = useInvalidate();

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { monthsToFreeze } from './app';
+import { monthsToFreeze, reorderedIds } from './app';
 
 // Changer le versement mensuel ne doit pas reecrire le passe : les mois deja
 // ecoules sont inscrits en dur avec l'ancien montant, faute de quoi un solde
@@ -41,5 +41,45 @@ describe('freezing the months already gone', () => {
       '2026-12',
       '2027-01',
     ]);
+  });
+});
+
+// Remonter ou descendre une reserve renumerote toute la liste : les reserves
+// creees avant cette fonctionnalite peuvent partager un meme `sort_order`, et
+// un simple echange de valeurs ne les deplacerait pas.
+
+describe('moving a reserve a step', () => {
+  const liste = ['vacances', 'anniversaire', 'noel'];
+
+  it('swaps it with the one above', () => {
+    expect(reorderedIds(liste, 'anniversaire', -1)).toEqual([
+      'anniversaire',
+      'vacances',
+      'noel',
+    ]);
+  });
+
+  it('swaps it with the one below', () => {
+    expect(reorderedIds(liste, 'anniversaire', 1)).toEqual([
+      'vacances',
+      'noel',
+      'anniversaire',
+    ]);
+  });
+
+  it('leaves the list alone at the top', () => {
+    expect(reorderedIds(liste, 'vacances', -1)).toBe(liste);
+  });
+
+  it('leaves the list alone at the bottom', () => {
+    expect(reorderedIds(liste, 'noel', 1)).toBe(liste);
+  });
+
+  it('leaves the list alone for a reserve it does not hold', () => {
+    expect(reorderedIds(liste, 'maison', -1)).toBe(liste);
+  });
+
+  it('handles a single reserve', () => {
+    expect(reorderedIds(['vacances'], 'vacances', 1)).toEqual(['vacances']);
   });
 });

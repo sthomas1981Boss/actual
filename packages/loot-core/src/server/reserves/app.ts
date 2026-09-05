@@ -21,6 +21,7 @@ import type {
 
 export type ReservesHandlers = {
   'reserve-monthly-set': typeof setMonthlyAmount;
+  'reserves-move': typeof moveReserve;
   'reserves-get': typeof getReserves;
   'reserves-create': typeof createReserve;
   'reserves-update': typeof updateReserve;
@@ -37,6 +38,7 @@ app.method('reserves-delete', mutator(undoable(deleteReserve)));
 app.method('reserve-entries-get', getEntries);
 app.method('reserve-entry-set', mutator(undoable(setEntry)));
 app.method('reserve-monthly-set', mutator(undoable(setMonthlyAmount)));
+app.method('reserves-move', mutator(undoable(moveReserve)));
 
 async function getReserves(): Promise<SavingsReserveEntity[]> {
   const reserves = await db.getSavingsReserves();
@@ -142,6 +144,45 @@ async function setMonthlyAmount({
   }
 
   await db.updateSavingsReserve({ id, monthly_amount: amount });
+}
+
+/**
+ * The order the reserves end up in once one of them is moved a step.
+ *
+ * The whole list is renumbered rather than swapping two values: reserves
+ * created before this existed can share a `sort_order`, or carry none at all,
+ * and swapping would then move nothing at all.
+ */
+export function reorderedIds(
+  ids: string[],
+  id: string,
+  step: -1 | 1,
+): string[] {
+  const from = ids.indexOf(id);
+  const to = from + step;
+  if (from === -1 || to < 0 || to >= ids.length) return ids;
+
+  const moved = [...ids];
+  [moved[from], moved[to]] = [moved[to], moved[from]];
+  return moved;
+}
+
+/** Moves a reserve one step up or down the table. */
+async function moveReserve({
+  id,
+  direction,
+}: {
+  id: SavingsReserveEntity['id'];
+  direction: 'up' | 'down';
+}): Promise<void> {
+  const reserves = await db.getSavingsReserves();
+  const ids = reserves.map(r => r.id);
+  const moved = reorderedIds(ids, id, direction === 'up' ? -1 : 1);
+  if (moved === ids) return;
+
+  for (const [index, movedId] of moved.entries()) {
+    await db.updateSavingsReserve({ id: movedId, sort_order: index + 1 });
+  }
 }
 
 /**
